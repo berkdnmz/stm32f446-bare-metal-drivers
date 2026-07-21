@@ -367,7 +367,7 @@ void GPIO_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi)
  * @Note				- Shifts the priority value to match the MSB implemented bits of the IPR register.
  *
  ************************************************************************************************/
-void GPIO_IRQPriorityConfig(uint8_t IRQNumber, uint8_t IRQPriority)
+void GPIO_IRQPriorityConfig(uint8_t IRQNumber, uint32_t IRQPriority)
 {
 	// 1. Find the corresponding IPR register and section
 	uint8_t iprx = IRQNumber / 4;
