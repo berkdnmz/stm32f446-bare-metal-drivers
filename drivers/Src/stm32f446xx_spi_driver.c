@@ -224,3 +224,27 @@ void SPI_PeripheralControl(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
 		pSPIx->CR1 &= ~(1 << SPI_CR1_SPE);
 	}
 }
+
+/*************************************************************************************************************************
+ * @fn 					- SPI_SSIConfig
+ *
+ * @brief				- Configures the SSI (Internal Slave Select) bit in CR1 register for Software Slave Management.
+ *
+ * @param[in]			- pSPIx : Base address of the SPI peripheral (e.g., SPI1, SPI2, SPI3, SPI4).
+ * @param[in]			- EnorDi : ENABLE (sets SSI to 1, pulling NSS internally high) or DISABLE.
+ *
+ * @return				- None.
+ *
+ * @Note				- Required when SSM (Software Slave Management) is enabled to prevent MODF (Mode Fault) errors in Master mode.
+ *
+ *************************************************************************************************************************/
+void SPI_SSIConfig(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
+{
+	if(EnorDi == ENABLE)
+	{
+		pSPIx->CR1 |= (1 << SPI_CR1_SSI);
+	}else
+	{
+		pSPIx->CR1 &= ~(1 << SPI_CR1_SSI);
+	}
+}
