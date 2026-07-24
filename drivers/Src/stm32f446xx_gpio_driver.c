@@ -11,14 +11,14 @@
 /**********************************************************************************************
  * @fn 					- GPIO_PeriClockControl
  *
- * @brief				- This function controls the peripherals clock for the given GPIO port.
+ * @brief				- This function enables or disables the peripheral clock for the given GPIO port.
  *
- * @param[in]			- pGPIOx : GPIO port to be configured.
- * @param[in]			- EnorDi : Enable or disable the peripherals clock.
+ * @param[in]			- pGPIOx : Base address of the GPIO port (e.g., GPIOA, GPIOB, etc.).
+ * @param[in]			- EnorDi : ENABLE or DISABLE macro to control the clock.
  *
  * @return				- None.
  *
- * @Note				- The peripheral clock must be enabled before calling GPIO_Init()
+ * @Note				- None.
  *
  ***********************************************************************************************/
 void GPIO_PeriClockControl(GPIO_RegDef_t *pGPIOx, uint8_t EnorDi)
@@ -66,12 +66,15 @@ void GPIO_PeriClockControl(GPIO_RegDef_t *pGPIOx, uint8_t EnorDi)
  *
  * @return				- None.
  *
- * @Note				- Enable the peripheral clock before calling this function
+ * @Note				- Enables the GPIO peripheral clock automatically inside the function.
  *
  ************************************************************************************************/
 void GPIO_Init(GPIO_Handle_t *pGPIOHandle)
 {
 	uint32_t temp=0; //temp register
+
+	//enable the peripheral clock
+	GPIO_PeriClockControl(pGPIOHandle->pGPIOx, ENABLE);
 
 	//1. configure the mode of gpio pin
 

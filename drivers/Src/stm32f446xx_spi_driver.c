@@ -19,7 +19,7 @@
  *
  * @return				- None.
  *
- * @Note				- The peripheral clock must be enabled before configuring SPI registers or calling SPI_Init().
+ * @Note				- None.
  *
  *************************************************************************************************************************/
 void SPI_PeriClockControl(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
@@ -55,12 +55,16 @@ void SPI_PeriClockControl(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
  *
  * @return				- None.
  *
- * @Note				- None.
+ * @Note				- Enables the SPI peripheral clock automatically inside the function.
  *
  *************************************************************************************************************************/
 void SPI_Init(SPI_Handle_t *pSPIHandle)
 {
-	 //first lets configure the SPI_CR1 register
+
+	//peripheral clock enable
+	SPI_PeriClockControl(pSPIHandle->pSPIx, ENABLE);
+
+	//first lets configure the SPI_CR1 register
 
 	uint32_t tempreg = 0;
 
