@@ -135,3 +135,64 @@ void SPI_DeInit(SPI_RegDef_t *pSPIx)
 	}
 }
 
+/*************************************************************************************************************************
+ * @fn 					- SPI_GetFlagStatus
+ *
+ * @brief				- Checks whether a specific SPI Status Register (SR) flag is SET or RESET.
+ *
+ * @param[in]			- pSPIx : Base address of the SPI peripheral (e.g., SPI1, SPI2, SPI3, SPI4).
+ * @param[in]			- FlagName : The bitmask/flag to check (e.g., SPI_TXE_FLAG, SPI_RXNE_FLAG, SPI_BUSY_FLAG).
+ *
+ * @return				- FLAG_SET or FLAG_RESET.
+ *
+ * @Note				- None.
+ *
+ *************************************************************************************************************************/
+uint8_t SPI_GetFlagStatus(SPI_RegDef_t *pSPIx, uint32_t FlagName)
+{
+	if(pSPIx->SR & FlagName)
+	{
+		return FLAG_SET;
+	}
+	return FLAG_RESET;
+}
+
+/*************************************************************************************************************************
+ * @fn 					- SPI_SendData
+ *
+ * @brief				- Sends data over SPI peripheral using blocking (polling) mode.
+ *
+ * @param[in]			- pSPIx : Base address of the SPI peripheral.
+ * @param[in]			- pTxBuffer : Pointer to the transmit data buffer.
+ * @param[in]			- Len : Length of data in bytes to be transmitted.
+ *
+ * @return				- None.
+ *
+ * @Note				- This is a blocking API (polling on TXE flag).
+ *
+ *************************************************************************************************************************/
+void SPI_SendData(SPI_RegDef_t *pSPIx, uint8_t *pTxBuffer, uint32_t Len)
+{
+	while(Len > 0)
+	{
+		//1. wait until TXE is set
+		while(SPI_GetFlagStatus(pSPIx, SPI_TXE_FLAG) == FLAG_RESET );
+
+		//2. check the DFF bit in CR1
+		if( (pSPIx->CR1 & ( 1 << SPI_CR1_DFF) ) )
+		{
+			//16 bit DFF
+			//1. load the data in to the DR
+			pSPIx->DR = *((uint16_t*)pTxBuffer);
+			Len -= 2;
+			(uint16_t*)pTxBuffer++;
+		}else
+		{
+			//8 bit DFF
+			//1. load the data in to the DR
+			pSPIx->DR = *pTxBuffer;
+			Len--;
+			pTxBuffer++;
+		}
+	}
+}

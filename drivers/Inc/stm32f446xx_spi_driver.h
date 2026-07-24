@@ -83,6 +83,18 @@ typedef struct
 #define SPI_SSM_EN							1
 #define SPI_SSM_DI							0
 
+/*
+ * SPI related status flags definitions
+ */
+#define SPI_TXE_FLAG						(1 << SPI_SR_TXE)
+#define SPI_RXNE_FLAG						(1 << SPI_SR_RXNE)
+#define SPI_CHSIDE_FLAG						(1 << SPI_SR_CHSIDE)
+#define SPI_UDR_FLAG						(1 << SPI_SR_UDR)
+#define SPI_CRCERR_FLAG						(1 << SPI_SR_CRCERR)
+#define SPI_MODF_FLAG						(1 << SPI_SR_MODF)
+#define SPI_OVR_FLAG						(1 << SPI_SR_OVR)
+#define SPI_BUSY_FLAG						(1 << SPI_SR_BSY)
+#define SPI_FRE_FLAG						(1 << SPI_SR_FRE)
 
 /******************************************************************************************
  * 								APIs supported by this driver
