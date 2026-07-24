@@ -200,3 +200,27 @@ void SPI_SendData(SPI_RegDef_t *pSPIx, uint8_t *pTxBuffer, uint32_t Len)
 		}
 	}
 }
+
+/*************************************************************************************************************************
+ * @fn 					- SPI_PeripheralControl
+ *
+ * @brief				- Enables or disables the given SPI peripheral by controlling the SPE bit in CR1.
+ *
+ * @param[in]			- pSPIx : Base address of the SPI peripheral (e.g., SPI1, SPI2, SPI3, SPI4).
+ * @param[in]			- EnorDi : ENABLE or DISABLE macro.
+ *
+ * @return				- None.
+ *
+ * @Note				- SPI peripheral must be enabled after configuration and before data transfer!
+ *
+ *************************************************************************************************************************/
+void SPI_PeripheralControl(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
+{
+	if(EnorDi == ENABLE)
+	{
+		pSPIx->CR1 |= (1 << SPI_CR1_SPE);
+	}else
+	{
+		pSPIx->CR1 &= ~(1 << SPI_CR1_SPE);
+	}
+}
