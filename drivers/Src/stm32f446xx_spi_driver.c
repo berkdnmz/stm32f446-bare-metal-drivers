@@ -202,6 +202,46 @@ void SPI_SendData(SPI_RegDef_t *pSPIx, uint8_t *pTxBuffer, uint32_t Len)
 }
 
 /*************************************************************************************************************************
+ * @fn 					- SPI_ReceiveData
+ *
+ * @brief				- Receives data over SPI peripheral using blocking (polling) mode.
+ *
+ * @param[in]			- pSPIx : Base address of the SPI peripheral.
+ * @param[in]			- pRxBuffer : Pointer to the receive data buffer.
+ * @param[in]			- Len : Length of data in bytes to be received.
+ *
+ * @return				- None.
+ *
+ * @Note				- This is a blocking API (polling on RXNE flag).
+ *
+ *************************************************************************************************************************/
+void SPI_ReceiveData(SPI_RegDef_t *pSPIx, uint8_t *pRxBuffer, uint32_t Len)
+{
+	while(Len > 0)
+	{
+		//1. wait until RXNE is set
+		while(SPI_GetFlagStatus(pSPIx, SPI_RXNE_FLAG) == FLAG_RESET );
+
+		//2. check the DFF bit in CR1
+		if( (pSPIx->CR1 & ( 1 << SPI_CR1_DFF) ) )
+		{
+			//16 bit DFF
+			//1. load the data from DR to Rxbuffer address
+			*((uint16_t*)pRxBuffer) = pSPIx->DR;
+			Len -= 2;
+			pRxBuffer += 2;
+		}else
+		{
+			//8 bit DFF
+			//1. load the data from DR to Rxbuffer address
+			*pRxBuffer = pSPIx->DR;
+			Len--;
+			pRxBuffer++;
+		}
+	}
+}
+
+/*************************************************************************************************************************
  * @fn 					- SPI_PeripheralControl
  *
  * @brief				- Enables or disables the given SPI peripheral by controlling the SPE bit in CR1.
