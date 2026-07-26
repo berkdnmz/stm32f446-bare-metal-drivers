@@ -379,7 +379,10 @@ void GPIO_IRQPriorityConfig(uint8_t IRQNumber, uint32_t IRQPriority)
 	// 2. Calculate shift amount taking implemented bits (MSB) into account
 	uint8_t shift_amount = ( 8 * iprx_section ) + ( 8 - NO_PR_BITS_IMPLEMENTED );
 
-	// 3. Set priority level
+	// 3. Clear existing priority bits in the corresponding section
+	NVIC_PR_BASE_ADDR[iprx] &= ~( 0xFF << (8 * iprx_section) );
+
+	// 4. Set priority level
 	NVIC_PR_BASE_ADDR[iprx] |= ( IRQPriority << shift_amount );
 }
 
