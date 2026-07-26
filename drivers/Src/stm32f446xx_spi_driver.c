@@ -242,6 +242,78 @@ void SPI_ReceiveData(SPI_RegDef_t *pSPIx, uint8_t *pRxBuffer, uint32_t Len)
 	}
 }
 
+/*************************************************************************************************************************
+ * @fn 					- SPI_SendDataIT
+ *
+ * @brief				- Sends data over SPI peripheral using interrupt (non-blocking) mode.
+ *
+ * @param[in]			- pSPIHandle : Pointer to the SPI_Handle_t structure.
+ * @param[in]			- pTxBuffer  : Pointer to the transmit data buffer.
+ * @param[in]			- Len        : Length of data in bytes to be transmitted.
+ *
+ * @return				- Current application state (SPI_READY or SPI_BUSY_IN_TX).
+ *
+ * @Note				- This is a non-blocking API.
+ *
+ *************************************************************************************************************************/
+uint8_t SPI_SendDataIT(SPI_Handle_t *pSPIHandle, uint8_t *pTxBuffer, uint32_t Len)
+{
+	uint8_t state = pSPIHandle->TxState;
+
+	if(state != SPI_BUSY_IN_TX)
+	{
+		//1. Save the Tx buffer address and Len information in some global variables
+		pSPIHandle->pTxBuffer = pTxBuffer;
+		pSPIHandle->TxLen = Len;
+
+		//2. Mark the SPI state as busy in transmission so that
+		// 	 no other code can take over same SPI peripheral until transmission is over
+		pSPIHandle->TxState = SPI_BUSY_IN_TX;
+
+		//3. Enable the TXEIE control bit to get interrupt whenever TXE flag is set in SR
+		pSPIHandle->pSPIx->CR2 |= ( 1 << SPI_CR2_TXEIE);
+
+	}
+
+	return state;
+}
+
+/*************************************************************************************************************************
+ * @fn 					- SPI_ReceiveDataIT
+ *
+ * @brief				- Receives data over SPI peripheral using interrupt (non-blocking) mode.
+ *
+ * @param[in]			- pSPIHandle : Pointer to the SPI_Handle_t structure.
+ * @param[in]			- pRxBuffer  : Pointer to the receive data buffer.
+ * @param[in]			- Len        : Length of data in bytes to be received.
+ *
+ * @return				- Current application state (SPI_READY or SPI_BUSY_IN_RX).
+ *
+ * @Note				- This is a non-blocking API.
+ *
+ *************************************************************************************************************************/
+uint8_t SPI_ReceiveDataIT(SPI_Handle_t *pSPIHandle, uint8_t *pRxBuffer, uint32_t Len)
+{
+	uint8_t state = pSPIHandle->RxState;
+
+	if(state != SPI_BUSY_IN_RX)
+	{
+		//1. Save the Tx buffer address and Len information in some global variables
+		pSPIHandle->pRxBuffer = pRxBuffer;
+		pSPIHandle->RxLen = Len;
+
+		//2. Mark the SPI state as busy in transmission so that
+		// 	 no other code can take over same SPI peripheral until transmission is over
+		pSPIHandle->RxState = SPI_BUSY_IN_RX;
+
+		//3. Enable the TXEIE control bit to get interrupt whenever TXE flag is set in SR
+		pSPIHandle->pSPIx->CR2 |= ( 1 << SPI_CR2_RXNEIE);
+
+	}
+
+	return state;
+}
+
 /***********************************************************************************************
  * @fn 					- SPI_IRQInterruptConfig
  *
