@@ -201,6 +201,7 @@ void SPI_SendData(SPI_RegDef_t *pSPIx, uint8_t *pTxBuffer, uint32_t Len)
 	}
 }
 
+
 /*************************************************************************************************************************
  * @fn 					- SPI_ReceiveData
  *
@@ -239,6 +240,91 @@ void SPI_ReceiveData(SPI_RegDef_t *pSPIx, uint8_t *pRxBuffer, uint32_t Len)
 			pRxBuffer++;
 		}
 	}
+}
+
+/***********************************************************************************************
+ * @fn 					- SPI_IRQInterruptConfig
+ *
+ * @brief				- Enables or disables the specified IRQ number in the ARM Cortex-M NVIC.
+ *
+ * @param[in]			- IRQNumber  : Interrupt Request number to be configured.
+ * @param[in]			- EnorDi     : ENABLE or DISABLE macro.
+ *
+ * @return				- None.
+ *
+ * @Note				- Configures the NVIC_ISERx (Set Enable) or NVIC_ICERx (Clear Enable) registers.
+ *
+ ************************************************************************************************/
+void SPI_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi)
+{
+	if(EnorDi == ENABLE)
+	{
+		if(IRQNumber <= 31)
+		{
+			// NVIC_ISER0 (IRQ 0 - 31)
+			*NVIC_ISER0 |= ( 1 << IRQNumber );
+
+		}
+		else if(IRQNumber > 31 && IRQNumber < 64)
+		{
+			// NVIC_ISER1 (IRQ 32 - 63)
+			*NVIC_ISER1 |= ( 1 << (IRQNumber % 32) );
+
+		}
+		else if(IRQNumber >= 64 && IRQNumber < 96)
+		{
+			// NVIC_ISER2 (IRQ 64 - 95)
+			*NVIC_ISER2 |= ( 1 << (IRQNumber % 32) );
+		}
+	}
+	else
+	{
+		if(IRQNumber <= 31)
+		{
+			// NVIC_ICER0 (IRQ 0 - 31)
+			*NVIC_ICER0 |= ( 1 << IRQNumber );
+		}
+		else if(IRQNumber > 31 && IRQNumber < 64)
+		{
+			// NVIC_ICER1 (IRQ 32 - 63)
+			*NVIC_ICER1 |= ( 1 << (IRQNumber % 32) );
+		}
+		else if(IRQNumber >= 64 && IRQNumber < 96)
+		{
+			// NVIC_ICER2 (IRQ 64 - 95)
+			*NVIC_ICER2 |= ( 1 << (IRQNumber % 32) );
+		}
+	}
+}
+
+/***********************************************************************************************
+ * @fn 					- SPI_IRQPriorityConfig
+ *
+ * @brief				- Configures the priority level for a given IRQ number in the NVIC.
+ *
+ * @param[in]			- IRQNumber  : Interrupt Request number.
+ * @param[in]			- IRQPriority: Priority level to be assigned (0 to 15 for STM32F4).
+ *
+ * @return				- None.
+ *
+ * @Note				- Clears the register section first, then shifts the priority value to
+ * 						  match the MSB implemented bits of the IPR register.
+ *
+ ************************************************************************************************/
+void SPI_IRQPriorityConfig(uint8_t IRQNumber, uint32_t IRQPriority)
+{
+	// 1. Find out the IPR register and byte section
+	uint8_t iprx = IRQNumber / 4;
+	uint8_t iprx_section = IRQNumber % 4;
+
+	// 2. Calculate shift amount taking implemented bits (MSB) into account
+	uint8_t shift_amount = ( 8 * iprx_section ) + ( 8 - NO_PR_BITS_IMPLEMENTED );
+
+	// 3. Clear existing priority bits in the section
+	NVIC_PR_BASE_ADDR[iprx] &= ~( 0xFF << (8 * iprx_section) );
+
+	// 4. Set the new priority level
+	NVIC_PR_BASE_ADDR[iprx] |= ( IRQPriority << shift_amount );
 }
 
 /*************************************************************************************************************************
