@@ -499,6 +499,31 @@ void SPI_SSIConfig(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
 	}
 }
 
+/***********************************************************************************************
+ * @fn 					- SPI_SSOEConfig
+ *
+ * @brief				- Enables or disables Slave Select Output Enable (SSOE) in CR2 register.
+ *
+ * @param[in]			- pSPIx  : Base address of the SPI peripheral.
+ * @param[in]			- EnorDi : ENABLE or DISABLE macro.
+ *
+ * @return				- None.
+ *
+ * @Note				- When SSOE is enabled, NSS pin is automatically managed by hardware in Master mode.
+ *
+ ************************************************************************************************/
+void SPI_SSOEConfig(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
+{
+	if(EnorDi == ENABLE)
+	{
+		pSPIx->CR2 |= ( 1 << SPI_CR2_SSOE );
+	}
+	else
+	{
+		pSPIx->CR2 &= ~( 1 << SPI_CR2_SSOE );
+	}
+}
+
 /*
  * Some helper function implementations
  */
