@@ -106,8 +106,16 @@ typedef struct
  * SPI application states
  */
 #define SPI_READY							0
-#define SPI_BUSY_IN_RX							1
-#define SPI_BUSY_IN_TX							2
+#define SPI_BUSY_IN_RX						1
+#define SPI_BUSY_IN_TX						2
+
+/*
+ * Possible SPI Application events
+ */
+#define SPI_EVENT_TX_CMPLT					1
+#define SPI_EVENT_RX_CMPLT					2
+#define SPI_EVENT_OVR_ERR					3
+#define SPI_EVENT_CRC_ERR					4
 
 /******************************************************************************************
  * 								APIs supported by this driver
@@ -145,5 +153,13 @@ void SPI_IRQHandling(SPI_Handle_t *pSPIHandle);
  */
 void SPI_PeripheralControl(SPI_RegDef_t *pSPIx, uint8_t EnorDi);
 void SPI_SSIConfig(SPI_RegDef_t *pSPIx, uint8_t EnorDi);
+void SPI_CloseTransmisson(SPI_Handle_t *pSPIHandle);
+void SPI_CloseReception(SPI_Handle_t *pSPIHandle);
+void SPI_ClearOVRFlag(SPI_RegDef_t *pSPIx);
+
+/*
+ * Application callback
+ */
+void SPI_ApplicationEventCallback(SPI_Handle_t *pSPIHandle, uint8_t AppEv);
 
 #endif /* INC_STM32F446XX_SPI_DRIVER_H_ */
