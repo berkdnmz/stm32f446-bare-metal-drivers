@@ -426,7 +426,7 @@ void SPI_IRQHandling(SPI_Handle_t *pSPIHandle)
 	if(temp1 && temp2)
 	{
 		//handle RXNE
-		spi_txe_interrupt_handle(pSPIHandle);
+		spi_rxne_interrupt_handle(pSPIHandle);
 	}
 
 	//check for TXE
@@ -436,7 +436,7 @@ void SPI_IRQHandling(SPI_Handle_t *pSPIHandle)
 	if(temp1 && temp2)
 	{
 		//handle TXE
-		spi_rxne_interrupt_handle(pSPIHandle);
+		spi_txe_interrupt_handle(pSPIHandle);
 	}
 
 	//check for ovr flag
