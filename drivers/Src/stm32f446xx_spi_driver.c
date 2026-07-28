@@ -419,23 +419,23 @@ void SPI_IRQPriorityConfig(uint8_t IRQNumber, uint32_t IRQPriority)
 void SPI_IRQHandling(SPI_Handle_t *pSPIHandle)
 {
 	uint8_t temp1, temp2;
-	//first lets check for TXE
-	temp1 = pSPIHandle->pSPIx->SR & ( 1 << SPI_SR_TXE);
-	temp2 = pSPIHandle->pSPIx->CR2 & ( 1 << SPI_CR2_TXEIE);
-
-	if(temp1 && temp2)
-	{
-		//handle TXE
-		spi_txe_interrupt_handle(pSPIHandle);
-	}
-
-	//check for RXNE
+	//first lets check for RXNE
 	temp1 = pSPIHandle->pSPIx->SR & ( 1 << SPI_SR_RXNE);
 	temp2 = pSPIHandle->pSPIx->CR2 & ( 1 << SPI_CR2_RXNEIE);
 
 	if(temp1 && temp2)
 	{
 		//handle RXNE
+		spi_txe_interrupt_handle(pSPIHandle);
+	}
+
+	//check for TXE
+	temp1 = pSPIHandle->pSPIx->SR & ( 1 << SPI_SR_TXE);
+	temp2 = pSPIHandle->pSPIx->CR2 & ( 1 << SPI_CR2_TXEIE);
+
+	if(temp1 && temp2)
+	{
+		//handle TXE
 		spi_rxne_interrupt_handle(pSPIHandle);
 	}
 
