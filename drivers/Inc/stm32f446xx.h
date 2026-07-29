@@ -227,6 +227,24 @@ typedef struct
 }SYSCFG_RegDef_t;
 
 /*
+ * Peripheral register definition structure for I2C
+ */
+typedef struct
+{
+	__vo uint32_t CR1;
+	__vo uint32_t CR2;
+	__vo uint32_t OAR1;
+	__vo uint32_t OAR2;
+	__vo uint32_t DR;
+	__vo uint32_t SR1;
+	__vo uint32_t SR2;
+	__vo uint32_t CCR;
+	__vo uint32_t TRISE;
+	__vo uint32_t FLTR;
+
+}I2C_RegDef_t;
+
+/*
  * peripheral definitions
  */
 
@@ -249,6 +267,10 @@ typedef struct
 #define SPI2							((SPI_RegDef_t*)SPI2_BASEADDR)
 #define SPI3							((SPI_RegDef_t*)SPI3_BASEADDR)
 #define SPI4							((SPI_RegDef_t*)SPI4_BASEADDR)
+
+#define I2C1							((I2C_RegDef_t*)I2C1_BASEADDR)
+#define I2C2							((I2C_RegDef_t*)I2C2_BASEADDR)
+#define I2C3							((I2C_RegDef_t*)I2C3_BASEADDR)
 /*
  * Clock Enable Macros for GPIOx peripherals
  */
