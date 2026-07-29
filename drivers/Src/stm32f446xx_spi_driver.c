@@ -192,7 +192,7 @@ void SPI_SendData(SPI_RegDef_t *pSPIx, uint8_t *pTxBuffer, uint32_t Len)
 			//1. load the data in to the DR
 			pSPIx->DR = *((uint16_t*)pTxBuffer);
 			Len -= 2;
-			(uint16_t*)pTxBuffer++;
+			pTxBuffer += 2;
 		}else
 		{
 			//8 bit DFF
@@ -301,7 +301,7 @@ uint8_t SPI_ReceiveDataIT(SPI_Handle_t *pSPIHandle, uint8_t *pRxBuffer, uint32_t
 
 	if(state != SPI_BUSY_IN_RX)
 	{
-		//1. Save the Tx buffer address and Len information in some global variables
+		//1. Save the Rx buffer address and Len information in some global variables
 		pSPIHandle->pRxBuffer = pRxBuffer;
 		pSPIHandle->RxLen = Len;
 
@@ -309,7 +309,7 @@ uint8_t SPI_ReceiveDataIT(SPI_Handle_t *pSPIHandle, uint8_t *pRxBuffer, uint32_t
 		// 	 no other code can take over same SPI peripheral until transmission is over
 		pSPIHandle->RxState = SPI_BUSY_IN_RX;
 
-		//3. Enable the TXEIE control bit to get interrupt whenever TXE flag is set in SR
+		//3. Enable the RXNEIE control bit to get interrupt whenever TXE flag is set in SR
 		pSPIHandle->pSPIx->CR2 |= ( 1 << SPI_CR2_RXNEIE);
 
 	}
