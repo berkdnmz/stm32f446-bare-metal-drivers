@@ -184,13 +184,13 @@ void I2C_MasterSendData(I2C_Handle_t *pI2CHandle, uint8_t *pTxBuffer, uint32_t L
 
 	//2. confirm that start generation is completed by checking the SB flag in the SR1
 	//	Note: Until SB is cleared SCL will be stretched (pulled to LOW)
-	while( ! I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_SB_FLAG)  );
+	while( ! I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_SB)  );
 
 	//3. Send the address of the slave with r/nw bit set to w(0) (total 8 bits)
 	I2C_ExecuteAddressPhase(pI2CHandle->pI2Cx, SlaveAddr);
 
 	//4. Confirm that address phase is completed by checking the ADDR flag in the SR1
-	while( ! I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_ADDR_FLAG)  );
+	while( ! I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_ADDR)  );
 
 	//5. Clear the ADDR flag according to its software sequence
 	//	Note: Until ADDR is cleared SCL will be stretched (pulled to LOW)
@@ -200,7 +200,7 @@ void I2C_MasterSendData(I2C_Handle_t *pI2CHandle, uint8_t *pTxBuffer, uint32_t L
 
 	while(Len > 0)
 	{
-		while( ! I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_TXE_FLAG) ); //Wait till TXE is set
+		while( ! I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_TXE) ); //Wait till TXE is set
 		pI2CHandle->pI2Cx->DR = *pTxBuffer;
 		pTxBuffer++;
 		Len--;
@@ -210,9 +210,9 @@ void I2C_MasterSendData(I2C_Handle_t *pI2CHandle, uint8_t *pTxBuffer, uint32_t L
 	//	 Note: TXE=1, BTF=1, means that both SR and DR are empty and next transmission should begin
 	//	 when BTF=1 SCL will be stretched (pulled to LOW)
 
-	while( ! I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_TXE_FLAG) );
+	while( ! I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_TXE) );
 
-	while( ! I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_BTF_FLAG) );
+	while( ! I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_BTF) );
 
 
 	//8. Generate STOP condition and master need not to wait for the completion of stop condition.
