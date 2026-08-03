@@ -12,6 +12,10 @@ uint16_t APB1_PreScaler[4] = {2, 4, 8, 16};
 
 static uint32_t RCC_GetPLLOutputClock(void);
 static uint32_t RCC_GetPLCK1Value(void);
+static void I2C_GenerateStartCondition(I2C_RegDef_t *pI2Cx);
+static void I2C_ExecuteAddressPhase(I2C_RegDef_t *pI2Cx, uint8_t SlaveAddr);
+static void I2C_ClearADDRFlag(I2C_RegDef_t *pI2Cx);
+static void I2C_GenerateStopCondition(I2C_RegDef_t *pI2Cx);
 
 /*************************************************************************************************************************
  * @fn 					- I2C_PeriClockControl
@@ -160,8 +164,76 @@ void I2C_DeInit(I2C_RegDef_t *pI2Cx)
 	}
 }
 
+/*************************************************************************************************************************
+ * @fn 					- I2C_MasterSendData
+ *
+ * @brief				- Sends data to a slave device in blocking mode.
+ *
+ * @param[in]			- pI2CHandle : Pointer to I2C_Handle_t structure.
+ * @param[in]			- pTxBuffer  : Pointer to user Tx buffer.
+ * @param[in]			- Len        : Number of bytes to send.
+ * @param[in]			- SlaveAddr  : Target 7-bit slave address.
+ *
+ * @return				- None.
+ *
+ *************************************************************************************************************************/
+void I2C_MasterSendData(I2C_Handle_t *pI2CHandle, uint8_t *pTxBuffer, uint32_t Len, uint8_t SlaveAddr)
+{
+	//1. Generate the START condition
+	I2C_GenerateStartCondition(pI2CHandle->pI2Cx);
+
+	//2. confirm that start generation is completed by checking the SB flag in the SR1
+	//	Note: Until SB is cleared SCL will be stretched (pulled to LOW)
+	while( ! I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_SB_FLAG)  );
+
+	//3. Send the address of the slave with r/nw bit set to w(0) (total 8 bits)
+	I2C_ExecuteAddressPhase(pI2CHandle->pI2Cx, SlaveAddr);
+
+	//4. Confirm that address phase is completed by checking the ADDR flag in the SR1
+	while( ! I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_ADDR_FLAG)  );
+
+	//5. Clear the ADDR flag according to its software sequence
+	//	Note: Until ADDR is cleared SCL will be stretched (pulled to LOW)
+	I2C_ClearADDRFlag(pI2CHandle->pI2Cx);
+
+	//6. send the data until len becomes 0
+
+	while(Len > 0)
+	{
+		while( ! I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_TXE_FLAG) ); //Wait till TXE is set
+		pI2CHandle->pI2Cx->DR = *pTxBuffer;
+		pTxBuffer++;
+		Len--;
+	}
+
+	//7. when Len becomes zero wait for TXE=1 and BTF=1 before generating the STOP condition
+	//	 Note: TXE=1, BTF=1, means that both SR and DR are empty and next transmission should begin
+	//	 when BTF=1 SCL will be stretched (pulled to LOW)
+
+	while( ! I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_TXE_FLAG) );
+
+	while( ! I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_BTF_FLAG) );
+
+
+	//8. Generate STOP condition and master need not to wait for the completion of stop condition.
+	//	 Note: generating STOp, automatically clears the BTF
+	I2C_GenerateStopCondition(pI2CHandle->pI2Cx);
+}
+
 /*
- * Helper function to calculate APB1 Clock frequency
+ * Other Peripheral Control APIs
+ */
+uint8_t I2C_GetFlagStatus(I2C_RegDef_t *pI2Cx, uint32_t FlagName)
+{
+	if(pI2Cx->SR1 & FlagName)
+	{
+		return FLAG_SET;
+	}
+	return FLAG_RESET;
+}
+
+/*
+ * Some helper function implementations
  */
 uint32_t RCC_GetPLLOutputClock(void)
 {
@@ -169,6 +241,18 @@ uint32_t RCC_GetPLLOutputClock(void)
 	return 0;
 }
 
+/*************************************************************************************************************************
+ * @fn 					- I2C_DeInit
+ *
+ * @brief				- Resets all the registers of the given I2C peripheral to their default state.
+ *
+ * @param[in]			- pI2Cx : Base address of the I2C peripheral (e.g., I2C1, I2C2, I2C3, I2C4).
+ *
+ * @return				- None.
+ *
+ * @Note				- Uses RCC peripheral reset macros to reset the hardware logic.
+ *
+ *************************************************************************************************************************/
 uint32_t RCC_GetPLCK1Value(void)
 {
 	uint32_t pclk1, SystemClk = 0;
@@ -193,4 +277,69 @@ uint32_t RCC_GetPLCK1Value(void)
 	pclk1 = (SystemClk / ahbp) / apb1p;
 
 	return pclk1;
+}
+
+/*************************************************************************************************************************
+ * @fn 					- I2C_GenerateStartCondition
+ *
+ * @brief				- Generates START condition on the I2C bus.
+ *
+ * @param[in]			- pI2Cx : Base address of the I2C peripheral.
+ *
+ * @return				- None.
+ *
+ *************************************************************************************************************************/
+static void I2C_GenerateStartCondition(I2C_RegDef_t *pI2Cx)
+{
+	pI2Cx->CR1 |= ( 1 << I2C_CR1_START);
+}
+
+/*************************************************************************************************************************
+ * @fn 					- I2C_ExecuteAddressPhase
+ *
+ * @brief				- Sends target slave address with Read/Write bit set to Write (0).
+ *
+ * @param[in]			- pI2Cx     : Base address of the I2C peripheral.
+ * @param[in]			- SlaveAddr : 7-bit slave address.
+ *
+ * @return				- None.
+ *
+ *************************************************************************************************************************/
+static void I2C_ExecuteAddressPhase(I2C_RegDef_t *pI2Cx, uint8_t SlaveAddr)
+{
+	SlaveAddr = SlaveAddr << 1;
+	SlaveAddr &= ~( 1 << 0);	//SlaveAddr is Slave address + r/nw bit=0;
+	pI2Cx->DR = SlaveAddr;
+}
+
+/*************************************************************************************************************************
+ * @fn 					- I2C_ClearADDRFlag
+ *
+ * @brief				- Clears ADDR flag by reading SR1 followed by SR2 register.
+ *
+ * @param[in]			- pI2Cx : Base address of the I2C peripheral.
+ *
+ * @return				- None.
+ *
+ *************************************************************************************************************************/
+static void I2C_ClearADDRFlag(I2C_RegDef_t *pI2Cx)
+{
+	uint32_t dummyRead = pI2Cx->SR1;
+	dummyRead = pI2Cx->SR2;
+	(void)dummyRead;
+}
+
+/*************************************************************************************************************************
+ * @fn 					- I2C_GenerateStopCondition
+ *
+ * @brief				- Generates STOP condition on the I2C bus.
+ *
+ * @param[in]			- pI2Cx : Base address of the I2C peripheral.
+ *
+ * @return				- None.
+ *
+ *************************************************************************************************************************/
+static void I2C_GenerateStopCondition(I2C_RegDef_t *pI2Cx)
+{
+	pI2Cx->CR1 |= ( 1 << I2C_CR1_STOP);
 }
