@@ -232,6 +232,29 @@ uint8_t I2C_GetFlagStatus(I2C_RegDef_t *pI2Cx, uint32_t FlagName)
 	return FLAG_RESET;
 }
 
+/*************************************************************************************************************************
+ * @fn 					- I2C_PeripheralControl
+ *
+ * @brief				- Enables or disables the given I2C peripheral by toggling the PE bit in CR1.
+ *
+ * @param[in]			- pI2Cx  : Base address of the I2C peripheral (e.g., I2C1, I2C2, I2C3).
+ * @param[in]			- EnorDi : ENABLE or DISABLE macro.
+ *
+ * @return				- None.
+ *
+ *************************************************************************************************************************/
+void I2C_PeripheralControl(I2C_RegDef_t *pI2Cx, uint8_t EnorDi)
+{
+	if(EnorDi == ENABLE)
+	{
+		pI2Cx->CR1 |= (1 << I2C_CR1_PE);
+	}
+	else
+	{
+		pI2Cx->CR1 &= ~(1 << I2C_CR1_PE);
+	}
+}
+
 /*
  * Some helper function implementations
  */
@@ -242,15 +265,11 @@ uint32_t RCC_GetPLLOutputClock(void)
 }
 
 /*************************************************************************************************************************
- * @fn 					- I2C_DeInit
+ * @fn 					- RCC_GetPLCK1Value
  *
- * @brief				- Resets all the registers of the given I2C peripheral to their default state.
+ * @brief				- Calculates and returns the APB1 bus clock frequency in Hz.
  *
- * @param[in]			- pI2Cx : Base address of the I2C peripheral (e.g., I2C1, I2C2, I2C3, I2C4).
- *
- * @return				- None.
- *
- * @Note				- Uses RCC peripheral reset macros to reset the hardware logic.
+ * @return				- PCLK1 clock frequency in Hz.
  *
  *************************************************************************************************************************/
 uint32_t RCC_GetPLCK1Value(void)
