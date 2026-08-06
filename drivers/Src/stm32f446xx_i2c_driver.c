@@ -13,7 +13,7 @@ uint16_t APB1_PreScaler[4] = {2, 4, 8, 16};
 static uint32_t RCC_GetPLLOutputClock(void);
 static uint32_t RCC_GetPLCK1Value(void);
 static void I2C_GenerateStartCondition(I2C_RegDef_t *pI2Cx);
-static void I2C_ExecuteAddressPhase(I2C_RegDef_t *pI2Cx, uint8_t SlaveAddr);
+static void I2C_ExecuteAddressPhaseWrite(I2C_RegDef_t *pI2Cx, uint8_t SlaveAddr);
 static void I2C_ClearADDRFlag(I2C_RegDef_t *pI2Cx);
 static void I2C_GenerateStopCondition(I2C_RegDef_t *pI2Cx);
 
@@ -187,7 +187,7 @@ void I2C_MasterSendData(I2C_Handle_t *pI2CHandle, uint8_t *pTxBuffer, uint32_t L
 	while( ! I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_SB)  );
 
 	//3. Send the address of the slave with r/nw bit set to w(0) (total 8 bits)
-	I2C_ExecuteAddressPhase(pI2CHandle->pI2Cx, SlaveAddr);
+	I2C_ExecuteAddressPhaseWrite(pI2CHandle->pI2Cx, SlaveAddr);
 
 	//4. Confirm that address phase is completed by checking the ADDR flag in the SR1
 	while( ! I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_ADDR)  );
@@ -219,6 +219,7 @@ void I2C_MasterSendData(I2C_Handle_t *pI2CHandle, uint8_t *pTxBuffer, uint32_t L
 	//	 Note: generating STOp, automatically clears the BTF
 	I2C_GenerateStopCondition(pI2CHandle->pI2Cx);
 }
+
 
 /*
  * Other Peripheral Control APIs
@@ -314,7 +315,7 @@ static void I2C_GenerateStartCondition(I2C_RegDef_t *pI2Cx)
 }
 
 /*************************************************************************************************************************
- * @fn 					- I2C_ExecuteAddressPhase
+ * @fn 					- I2C_ExecuteAddressPhaseWrite
  *
  * @brief				- Sends target slave address with Read/Write bit set to Write (0).
  *
@@ -324,7 +325,7 @@ static void I2C_GenerateStartCondition(I2C_RegDef_t *pI2Cx)
  * @return				- None.
  *
  *************************************************************************************************************************/
-static void I2C_ExecuteAddressPhase(I2C_RegDef_t *pI2Cx, uint8_t SlaveAddr)
+static void I2C_ExecuteAddressPhaseWrite(I2C_RegDef_t *pI2Cx, uint8_t SlaveAddr)
 {
 	SlaveAddr = SlaveAddr << 1;
 	SlaveAddr &= ~( 1 << 0);	//SlaveAddr is Slave address + r/nw bit=0;
