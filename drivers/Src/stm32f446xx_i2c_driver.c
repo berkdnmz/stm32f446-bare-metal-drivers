@@ -307,6 +307,93 @@ void I2C_MasterReceiveData(I2C_Handle_t *pI2CHandle, uint8_t *pRxBuffer, uint32_
 	}
 }
 
+/*************************************************************************************************************************
+ * @fn 					- I2C_MasterSendDataIT
+ *
+ * @brief				- Initiates I2C Master Transmission in Interrupt mode (Non-Blocking).
+ *
+ * @param[in]			- pI2CHandle : Pointer to I2C Handle structure.
+ * @param[in]			- pTxBuffer  : Pointer to user Tx buffer.
+ * @param[in]			- Len        : Number of bytes to send.
+ * @param[in]			- SlaveAddr  : Target slave address.
+ * @param[in]			- Sr         : Repeated Start option (ENABLE/DISABLE).
+ *
+ * @return				- Current bus state (I2C_READY, I2C_BUSY_IN_TX, I2C_BUSY_IN_RX).
+ *
+ *************************************************************************************************************************/
+uint8_t I2C_MasterSendDataIT(I2C_Handle_t *pI2CHandle, uint8_t *pTxBuffer, uint32_t Len, uint8_t SlaveAddr, uint8_t Sr)
+{
+	uint8_t busystate = pI2CHandle->TxRxState;
+
+	if( (busystate != I2C_BUSY_IN_TX) && (busystate != I2C_BUSY_IN_RX))
+	{
+		//1. Save transaction state into handle
+		pI2CHandle->pTxBuffer = pTxBuffer;
+		pI2CHandle->TxLen = Len;
+		pI2CHandle->TxRxState = I2C_BUSY_IN_TX;
+		pI2CHandle->DevAddr = SlaveAddr;
+		pI2CHandle->Sr = Sr;
+
+		//2. Generate START condition
+		I2C_GenerateStartCondition(pI2CHandle->pI2Cx);
+
+		//3. Enable ITBUFEN control bit
+		pI2CHandle->pI2Cx->CR2 |= (1 << I2C_CR2_ITBUFEN);
+
+		//4. Enable ITEVFEN control bit
+		pI2CHandle->pI2Cx->CR2 |= (1 << I2C_CR2_ITEVTEN);
+
+		//5. Enable ITERREN control bit
+		pI2CHandle->pI2Cx->CR2 |= (1 << I2C_CR2_ITERREN);
+	}
+
+	return busystate;
+}
+
+/*************************************************************************************************************************
+ * @fn 					- I2C_MasterReceiveDataIT
+ *
+ * @brief				- Initiates I2C Master Reception in Interrupt mode (Non-Blocking).
+ *
+ * @param[in]			- pI2CHandle : Pointer to I2C Handle structure.
+ * @param[in]			- pRxBuffer  : Pointer to user Rx buffer.
+ * @param[in]			- Len        : Number of bytes to receive.
+ * @param[in]			- SlaveAddr  : Target slave address.
+ * @param[in]			- Sr         : Repeated Start option (ENABLE/DISABLE).
+ *
+ * @return				- Current bus state (I2C_READY, I2C_BUSY_IN_TX, I2C_BUSY_IN_RX).
+ *
+ *************************************************************************************************************************/
+uint8_t I2C_MasterReceiveDataIT(I2C_Handle_t *pI2CHandle, uint8_t *pRxBuffer, uint32_t Len, uint8_t SlaveAddr, uint8_t Sr)
+{
+	uint8_t busystate = pI2CHandle->TxRxState;
+
+	if( (busystate != I2C_BUSY_IN_TX) && (busystate != I2C_BUSY_IN_RX))
+	{
+		//1. Save transaction state into handle
+		pI2CHandle->pRxBuffer = pRxBuffer;
+		pI2CHandle->RxLen = Len;
+		pI2CHandle->TxRxState = I2C_BUSY_IN_RX;
+		pI2CHandle->RxSize = Len; //Rxsize is used in the ISR code to manage the data reception
+		pI2CHandle->DevAddr = SlaveAddr;
+		pI2CHandle->Sr = Sr;
+
+		//2. Generate START condition
+		I2C_GenerateStartCondition(pI2CHandle->pI2Cx);
+
+		//3. Enable ITBUFEN control bit
+		pI2CHandle->pI2Cx->CR2 |= (1 << I2C_CR2_ITBUFEN);
+
+		//4. Enable ITEVFEN control bit
+		pI2CHandle->pI2Cx->CR2 |= (1 << I2C_CR2_ITEVTEN);
+
+		//5. Enable ITERREN control bit
+		pI2CHandle->pI2Cx->CR2 |= (1 << I2C_CR2_ITERREN);
+	}
+
+	return busystate;
+}
+
 
 /*
  * Other Peripheral Control APIs
