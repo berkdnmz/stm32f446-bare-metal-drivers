@@ -452,6 +452,77 @@ void I2C_CloseReceiveData(I2C_Handle_t *pI2CHandle)
  * IRQ Configuration and ISR handling
  */
 /*************************************************************************************************************************
+ * @fn 					- I2C_IRQInterruptConfig
+ *
+ * @brief				- Enables or Disables specified IRQ number in Cortex-M NVIC registers.
+ *
+ * @param[in]			- IRQNumber : IRQ position number in NVIC table.
+ * @param[in]			- EnorDi    : ENABLE or DISABLE.
+ *
+ * @return				- None.
+ *
+ *************************************************************************************************************************/
+void I2C_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi)
+{
+	if(EnorDi == ENABLE)
+	{
+		if(IRQNumber <= 31)
+		{
+			// Program ISER0 register
+			*NVIC_ISER0 |= ( 1 << IRQNumber );
+		}
+		else if(IRQNumber > 31 && IRQNumber < 64)
+		{
+			// Program ISER1 register
+			*NVIC_ISER1 |= ( 1 << (IRQNumber % 32) );
+		}
+		else if(IRQNumber >= 64 && IRQNumber < 96)
+		{
+			// Program ISER2 register
+			*NVIC_ISER2 |= ( 1 << (IRQNumber % 32) );
+		}
+	}
+	else
+	{
+		if(IRQNumber <= 31)
+		{
+			// Program ICER0 register
+			*NVIC_ICER0 |= ( 1 << IRQNumber );
+		}
+		else if(IRQNumber > 31 && IRQNumber < 64)
+		{
+			// Program ICER1 register
+			*NVIC_ICER1 |= ( 1 << (IRQNumber % 32) );
+		}
+		else if(IRQNumber >= 64 && IRQNumber < 96)
+		{
+			// Program ICER2 register
+			*NVIC_ICER2 |= ( 1 << (IRQNumber % 32) );
+		}
+	}
+}
+
+/*************************************************************************************************************************
+ * @fn 					- I2C_IRQPriorityConfig
+ *
+ * @brief				- Configures priority level for specified IRQ number.
+ *
+ * @param[in]			- IRQNumber  : IRQ position number.
+ * @param[in]			- IRQPriority: Priority level value.
+ *
+ * @return				- None.
+ *
+ *************************************************************************************************************************/
+void I2C_IRQPriorityConfig(uint8_t IRQNumber, uint32_t IRQPriority)
+{
+	uint8_t iprx = IRQNumber / 4;
+	uint8_t iprx_section = IRQNumber % 4;
+
+	uint8_t shift_amount = (8 * iprx_section) + (8 - NO_PR_BITS_IMPLEMENTED);
+	*(NVIC_PR_BASE_ADDR + iprx) |= (IRQPriority << shift_amount);
+}
+
+/*************************************************************************************************************************
  * @fn 					- I2C_EV_IRQHandling
  *
  * @brief				- Handles I2C Event Interrupts (SB, ADDR, BTF, STOPF, TXE, RXNE).
