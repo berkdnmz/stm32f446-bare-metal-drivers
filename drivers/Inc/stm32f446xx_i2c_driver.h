@@ -76,6 +76,8 @@ typedef struct
 #define I2C_EV_TX_CMPLT						0
 #define I2C_EV_RX_CMPLT						1
 #define I2C_EV_STOP							2
+#define I2C_EV_DATA_REQ                     3
+#define I2C_EV_DATA_RCV                     4
 
 /*
  * Possible SPI Application events
@@ -131,6 +133,9 @@ uint8_t I2C_MasterReceiveDataIT(I2C_Handle_t *pI2CHandle, uint8_t *pRxBuffer, ui
 
 void I2C_CloseSendData(I2C_Handle_t *pI2CHandle);
 void I2C_CloseReceiveData(I2C_Handle_t *pI2CHandle);
+
+void I2C_SlaveSendData(I2C_RegDef_t *pI2Cx, uint8_t data);
+uint8_t I2C_SlaveReceiveData(I2C_RegDef_t *pI2Cx);
 
 /*
  * IRQ Configuration and ISR handling

@@ -448,6 +448,37 @@ void I2C_CloseReceiveData(I2C_Handle_t *pI2CHandle)
 	}
 }
 
+/*************************************************************************************************************************
+ * @fn 					- I2C_SlaveSendData
+ *
+ * @brief				- Sends a byte of data in I2C Slave mode by writing to the Data Register (DR).
+ *
+ * @param[in]			- pI2Cx : Base address of the I2C peripheral.
+ * @param[in]			- data  : 8-bit data byte to be transmitted.
+ *
+ * @return				- None.
+ *
+ *************************************************************************************************************************/
+void I2C_SlaveSendData(I2C_RegDef_t *pI2Cx, uint8_t data)
+{
+	pI2Cx->DR = data;
+}
+
+/*************************************************************************************************************************
+ * @fn 					- I2C_SlaveReceiveData
+ *
+ * @brief				- Receives a byte of data in I2C Slave mode by reading from the Data Register (DR).
+ *
+ * @param[in]			- pI2Cx : Base address of the I2C peripheral.
+ *
+ * @return				- uint8_t : Received 8-bit data byte.
+ *
+ *************************************************************************************************************************/
+uint8_t I2C_SlaveReceiveData(I2C_RegDef_t *pI2Cx)
+{
+	return (uint8_t)pI2Cx->DR;
+}
+
 /*
  * IRQ Configuration and ISR handling
  */
