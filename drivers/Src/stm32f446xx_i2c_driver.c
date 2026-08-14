@@ -818,6 +818,54 @@ void I2C_ManageAcking(I2C_RegDef_t *pI2Cx, uint8_t EnorDi)
 }
 
 /*
+ * Application callback
+ */
+/*************************************************************************************************************************
+ * @fn 					- I2C_ApplicationEventCallback
+ *
+ * @brief				- Weak implementation of application event callback. Notifies application about I2C events/errors.
+ *
+ * @param[in]			- pI2CHandle : Pointer to I2C Handle structure.
+ * @param[in]			- AppEv      : Application event macro (e.g., I2C_EV_TX_CMPLT, I2C_ERROR_AF).
+ *
+ * @return				- None.
+ *
+ * @note				- Weak implementation. Should be overridden by user application if needed.
+ *************************************************************************************************************************/
+__weak void I2C_ApplicationEventCallback(I2C_Handle_t *pI2CHandle, uint8_t AppEv)
+{
+	//This is a weak implementation. the user application may overide this function.
+}
+
+/*************************************************************************************************************************
+ * @fn 					- I2C_SlaveEnableDisableCallbackEvents
+ *
+ * @brief				- Enables or disables I2C event, buffer, and error interrupts for slave mode operation.
+ *
+ * @param[in]			- pI2Cx  : Base address of the I2C peripheral (e.g., I2C1, I2C2, I2C3).
+ * @param[in]			- EnOrDi : ENABLE or DISABLE macro.
+ *
+ * @return				- None.
+ *
+ * @note				- Configures ITEVTEN, ITBUFEN, and ITERREN control bits in the I2C_CR2 register.
+ *************************************************************************************************************************/
+void I2C_SlaveEnableDisableCallbackEvents(I2C_RegDef_t *pI2Cx, uint8_t EnOrDi)
+{
+    if(EnOrDi == ENABLE)
+    {
+        pI2Cx->CR2 |= ( 1 << I2C_CR2_ITEVTEN);
+        pI2Cx->CR2 |= ( 1 << I2C_CR2_ITBUFEN);
+        pI2Cx->CR2 |= ( 1 << I2C_CR2_ITERREN);
+    }
+    else
+    {
+        pI2Cx->CR2 &= ~( 1 << I2C_CR2_ITEVTEN);
+        pI2Cx->CR2 &= ~( 1 << I2C_CR2_ITBUFEN);
+        pI2Cx->CR2 &= ~( 1 << I2C_CR2_ITERREN);
+    }
+}
+
+/*
  * Some helper function implementations
  */
 uint32_t RCC_GetPLLOutputClock(void)
