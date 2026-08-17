@@ -96,6 +96,20 @@ typedef struct
 #define USART_HW_FLOW_CTRL_RTS         	 	2
 #define USART_HW_FLOW_CTRL_CTS_RTS      	3
 
+/*
+ * Application states
+ */
+#define USART_BUSY_IN_RX                1
+#define USART_BUSY_IN_TX                2
+#define USART_READY                     0
+
+/*
+ * USART flags definitions
+ */
+#define USART_FLAG_TXE                  ( 1 << USART_SR_TXE)
+#define USART_FLAG_RXNE                 ( 1 << USART_SR_RXNE)
+#define USART_FLAG_TC                   ( 1 << USART_SR_TC)
+
 
 /******************************************************************************************
  * 								APIs supported by this driver
@@ -115,9 +129,8 @@ void USART_DeInit(USART_RegDef_t *pUSARTx);
 /*
  * Data Send and Receive
  */
-void USART_SendData(USART_RegDef_t *pUSARTx, uint8_t *pTxBuffer, uint32_t Len);
-void USART_ReceiveData(USART_RegDef_t *pUSARTx, uint8_t *pRxBuffer, uint32_t Len);
-
+void USART_SendData(USART_Handle_t *pUSARTHandle, uint8_t *pTxBuffer, uint32_t Len);
+void USART_ReceiveData(USART_Handle_t *pUSARTHandle, uint8_t *pRxBuffer, uint32_t Len);
 uint8_t USART_SendDataIT(USART_Handle_t *pUSARTHandle, uint8_t *pTxBuffer, uint32_t Len);
 uint8_t USART_ReceiveDataIT(USART_Handle_t *pUSARTHandle, uint8_t *pRxBuffer, uint32_t Len);
 
