@@ -167,3 +167,42 @@ void USART_Init(USART_Handle_t *pUSARTHandle)
     /******************************** Configuration of BRR (Baudrate register) **************************/
 
 }
+
+/*********************************************************************
+ * @fn                 - USART_DeInit
+ *
+ * @brief              - Resets the specified USART peripheral registers using RCC reset registers
+ *
+ * @param[in]          - pUSARTx : Base address of the USART peripheral (USART1, USART2, etc.)
+ *
+ * @return             - None
+ *
+ * @Note               - Sets and clears the corresponding reset bit in RCC APBxRSTR registers
+ */
+void USART_DeInit(USART_RegDef_t *pUSARTx)
+{
+	if(pUSARTx == USART1)
+	{
+		USART1_REG_RESET();
+	}
+	else if(pUSARTx == USART2)
+	{
+		USART2_REG_RESET();
+	}
+	else if(pUSARTx == USART3)
+	{
+		USART3_REG_RESET();
+	}
+	else if(pUSARTx == UART4)
+	{
+		UART4_REG_RESET();
+	}
+	else if(pUSARTx == UART5)
+	{
+		UART5_REG_RESET();
+	}
+	else if(pUSARTx == USART6)
+	{
+		USART6_REG_RESET();
+	}
+}
