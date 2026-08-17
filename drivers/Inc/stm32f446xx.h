@@ -227,7 +227,7 @@ typedef struct
 }SYSCFG_RegDef_t;
 
 /*
- * Peripheral register definition structure for USART
+ * Peripheral register definition structure for I2C
  */
 typedef struct
 {
@@ -245,7 +245,7 @@ typedef struct
 }I2C_RegDef_t;
 
 /*
- * Peripheral register definition structure for I2C
+ * Peripheral register definition structure for USART
  */
 typedef struct
 {
