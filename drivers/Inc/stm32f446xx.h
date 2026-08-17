@@ -227,7 +227,7 @@ typedef struct
 }SYSCFG_RegDef_t;
 
 /*
- * Peripheral register definition structure for I2C
+ * Peripheral register definition structure for USART
  */
 typedef struct
 {
@@ -243,6 +243,21 @@ typedef struct
 	__vo uint32_t FLTR;
 
 }I2C_RegDef_t;
+
+/*
+ * Peripheral register definition structure for I2C
+ */
+typedef struct
+{
+	__vo uint32_t SR;
+	__vo uint32_t DR;
+	__vo uint32_t BRR;
+	__vo uint32_t CR1;
+	__vo uint32_t CR2;
+	__vo uint32_t CR3;
+	__vo uint32_t GTPR;
+
+}USART_RegDef_t;
 
 /*
  * peripheral definitions
@@ -271,6 +286,13 @@ typedef struct
 #define I2C1							((I2C_RegDef_t*)I2C1_BASEADDR)
 #define I2C2							((I2C_RegDef_t*)I2C2_BASEADDR)
 #define I2C3							((I2C_RegDef_t*)I2C3_BASEADDR)
+
+#define USART1							((USART_RegDef_t*)USART1_BASEADDR)
+#define USART2							((USART_RegDef_t*)USART2_BASEADDR)
+#define USART3							((USART_RegDef_t*)USART3_BASEADDR)
+#define UART4							((USART_RegDef_t*)UART4_BASEADDR)
+#define UART5							((USART_RegDef_t*)UART5_BASEADDR)
+#define USART6							((USART_RegDef_t*)USART6_BASEADDR)
 /*
  * Clock Enable Macros for GPIOx peripherals
  */
