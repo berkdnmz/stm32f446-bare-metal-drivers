@@ -479,6 +479,12 @@ typedef struct
 #define NVIC_IRQ_PRIO13					13
 #define NVIC_IRQ_PRIO14					14
 #define NVIC_IRQ_PRIO15					15
+#define NVIC_IRQ_USART1					37
+#define NVIC_IRQ_USART2					38
+#define NVIC_IRQ_USART3					39
+#define NVIC_IRQ_UART4					52
+#define NVIC_IRQ_UART5					53
+#define NVIC_IRQ_USART6					71
 
 /*
  * some generic macros

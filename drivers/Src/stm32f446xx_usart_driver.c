@@ -9,6 +9,14 @@
 
 #include "stm32f446xx_usart_driver.h"
 
+static uint16_t AHB_PreScaler[8] = {2, 4, 8, 16, 64, 128, 256, 512};
+static uint8_t APB1_PreScaler[4] = {2, 4, 8, 16};
+static uint8_t APB2_PreScaler[4] = {2, 4, 8, 16};
+
+
+static uint32_t RCC_GetPCLK1Value(void);
+static uint32_t RCC_GetPCLK2Value(void);
+
 /*************************************************************************************************************************
  * @fn                  - USART_PeriClockControl
  *
@@ -383,6 +391,233 @@ uint8_t USART_ReceiveDataIT(USART_Handle_t *pUSARTHandle, uint8_t *pRxBuffer, ui
 }
 
 /*
+ * IRQ Configuration and ISR handling
+ */
+/*********************************************************************
+ * @fn                - USART_IRQHandling
+ *
+ * @brief             - Handles USART interrupts and manages TX/RX state machines
+ *
+ * @param[in]         - pUSARTHandle : Pointer to the USART_Handle_t structure
+ *
+ * @return            - None
+ *********************************************************************/
+void USART_IRQHandling(USART_Handle_t *pUSARTHandle)
+{
+    uint32_t temp1, temp2, temp3;
+    uint16_t *pdata;
+
+    /************************* Check for TC flag ********************************************/
+
+    // 1. Check the state of TC bit in the SR
+    temp1 = pUSARTHandle->pUSARTx->SR & (1 << USART_SR_TC);
+
+    // 2. Check the state of TCIE bit in CR1
+    temp2 = pUSARTHandle->pUSARTx->CR1 & (1 << USART_CR1_TCIE);
+
+    if(temp1 && temp2)
+    {
+        // This interrupt is caused by Transmission Complete (TC)
+        if(pUSARTHandle->TxBusyState == USART_BUSY_IN_TX)
+        {
+            // Check the TxLen. If zero, close transmission
+            if(pUSARTHandle->TxLen == 0)
+            {
+                // Clear the TC flag
+                pUSARTHandle->pUSARTx->SR &= ~(1 << USART_SR_TC);
+
+                // Clear the TCIE control bit (disable interrupt)
+                pUSARTHandle->pUSARTx->CR1 &= ~(1 << USART_CR1_TCIE);
+
+                // Reset the application state
+                pUSARTHandle->TxBusyState = USART_READY;
+
+                // Reset Buffer address to NULL
+                pUSARTHandle->pTxBuffer = NULL;
+                pUSARTHandle->TxLen = 0;
+
+                // Call application callback
+                USART_ApplicationEventCallback(pUSARTHandle, USART_EVENT_TX_CMPLT);
+            }
+        }
+    }
+
+    /************************* Check for TXE flag ********************************************/
+
+    // 1. Check the state of TXE bit in the SR
+    temp1 = pUSARTHandle->pUSARTx->SR & (1 << USART_SR_TXE);
+
+    // 2. Check the state of TXEIE bit in CR1
+    temp2 = pUSARTHandle->pUSARTx->CR1 & (1 << USART_CR1_TXEIE);
+
+    if(temp1 && temp2)
+    {
+        if(pUSARTHandle->TxBusyState == USART_BUSY_IN_TX)
+        {
+            if(pUSARTHandle->TxLen > 0)
+            {
+                // 9-Bit frame
+                if(pUSARTHandle->USART_Config.USART_WordLength == USART_WORDLEN_9BITS)
+                {
+                    pdata = (uint16_t*) pUSARTHandle->pTxBuffer;
+                    pUSARTHandle->pUSARTx->DR = (*pdata & (uint16_t)0x01FF);
+
+                    if(pUSARTHandle->USART_Config.USART_ParityControl == USART_PARITY_DISABLE)
+                    {
+                        // 9-bit data: increment buffer twice and decrement length by 2
+                        pUSARTHandle->pTxBuffer++;
+                        pUSARTHandle->pTxBuffer++;
+                        pUSARTHandle->TxLen -= 2;
+                    }
+                    else
+                    {
+                        // 8-bit data + 1 parity bit: increment buffer once and decrement length by 1
+                        pUSARTHandle->pTxBuffer++;
+                        pUSARTHandle->TxLen--;
+                    }
+                }
+                else
+                {
+                    // 8-bit frame
+                    pUSARTHandle->pUSARTx->DR = (*(pUSARTHandle->pTxBuffer) & (uint8_t)0xFF);
+                    pUSARTHandle->pTxBuffer++;
+                    pUSARTHandle->TxLen--;
+                }
+            }
+
+            if(pUSARTHandle->TxLen == 0)
+            {
+                // Clear TXEIE bit to disable further TXE interrupts
+                pUSARTHandle->pUSARTx->CR1 &= ~(1 << USART_CR1_TXEIE);
+            }
+        }
+    }
+
+    /************************* Check for RXNE flag ********************************************/
+
+    temp1 = pUSARTHandle->pUSARTx->SR & (1 << USART_SR_RXNE);
+    temp2 = pUSARTHandle->pUSARTx->CR1 & (1 << USART_CR1_RXNEIE);
+
+    if(temp1 && temp2)
+    {
+        if(pUSARTHandle->RxBusyState == USART_BUSY_IN_RX)
+        {
+            if(pUSARTHandle->RxLen > 0)
+            {
+                // 9-Bit frame
+                if(pUSARTHandle->USART_Config.USART_WordLength == USART_WORDLEN_9BITS)
+                {
+                    if(pUSARTHandle->USART_Config.USART_ParityControl == USART_PARITY_DISABLE)
+                    {
+                        // 9-bit user data
+                        *((uint16_t*) pUSARTHandle->pRxBuffer) = (pUSARTHandle->pUSARTx->DR & (uint16_t)0x01FF);
+                        pUSARTHandle->pRxBuffer++;
+                        pUSARTHandle->pRxBuffer++;
+                        pUSARTHandle->RxLen -= 2;
+                    }
+                    else
+                    {
+                        // 8-bit user data + 1 parity bit
+                        *(pUSARTHandle->pRxBuffer) = (uint8_t)(pUSARTHandle->pUSARTx->DR & (uint8_t)0xFF);
+                        pUSARTHandle->pRxBuffer++;
+                        pUSARTHandle->RxLen--;
+                    }
+                }
+                else
+                {
+                    // 8-Bit frame
+                    if(pUSARTHandle->USART_Config.USART_ParityControl == USART_PARITY_DISABLE)
+                    {
+                        *(pUSARTHandle->pRxBuffer) = (uint8_t)(pUSARTHandle->pUSARTx->DR & (uint8_t)0xFF);
+                    }
+                    else
+                    {
+                        *(pUSARTHandle->pRxBuffer) = (uint8_t)(pUSARTHandle->pUSARTx->DR & (uint8_t)0x7F);
+                    }
+
+                    pUSARTHandle->pRxBuffer++;
+                    pUSARTHandle->RxLen--;
+                }
+            }
+
+            if(pUSARTHandle->RxLen == 0)
+            {
+                // Disable RXNE interrupt
+                pUSARTHandle->pUSARTx->CR1 &= ~(1 << USART_CR1_RXNEIE);
+                pUSARTHandle->RxBusyState = USART_READY;
+                USART_ApplicationEventCallback(pUSARTHandle, USART_EVENT_RX_CMPLT);
+            }
+        }
+    }
+
+    /************************* Check for CTS flag ********************************************/
+
+    temp1 = pUSARTHandle->pUSARTx->SR & (1 << USART_SR_CTS);
+    temp2 = pUSARTHandle->pUSARTx->CR3 & (1 << USART_CR3_CTSE);
+    temp3 = pUSARTHandle->pUSARTx->CR3 & (1 << USART_CR3_CTSIE);
+
+    if(temp1 && temp2 && temp3)
+    {
+        // Clear CTS flag
+        pUSARTHandle->pUSARTx->SR &= ~(1 << USART_SR_CTS);
+
+        // Notify application
+        USART_ApplicationEventCallback(pUSARTHandle, USART_EVENT_CTS);
+    }
+
+    /************************* Check for IDLE detection flag ********************************************/
+
+    temp1 = pUSARTHandle->pUSARTx->SR & (1 << USART_SR_IDLE);
+    temp2 = pUSARTHandle->pUSARTx->CR1 & (1 << USART_CR1_IDLEIE);
+
+    if(temp1 && temp2)
+    {
+        // Clear IDLE flag by reading SR followed by DR
+        temp1 = pUSARTHandle->pUSARTx->SR;
+        temp1 = pUSARTHandle->pUSARTx->DR;
+        (void)temp1; // Suppress unused variable warning
+
+        // Notify application
+        USART_ApplicationEventCallback(pUSARTHandle, USART_EVENT_IDLE);
+    }
+
+    /************************* Check for Overrun detection flag ********************************************/
+
+    temp1 = pUSARTHandle->pUSARTx->SR & (1 << USART_SR_ORE);
+    temp2 = pUSARTHandle->pUSARTx->CR1 & (1 << USART_CR1_RXNEIE);
+
+    if(temp1 && temp2)
+    {
+        // Notify application about ORE
+        USART_ApplicationEventCallback(pUSARTHandle, USART_ERR_ORE);
+    }
+
+    /************************* Check for Error Flag (Multibuffer / DMA mode) ********************************************/
+
+    temp2 = pUSARTHandle->pUSARTx->CR3 & (1 << USART_CR3_EIE);
+
+    if(temp2)
+    {
+        temp1 = pUSARTHandle->pUSARTx->SR;
+        if(temp1 & (1 << USART_SR_FE))
+        {
+            USART_ApplicationEventCallback(pUSARTHandle, USART_ERR_FE);
+        }
+
+        if(temp1 & (1 << USART_SR_NF))
+        {
+            USART_ApplicationEventCallback(pUSARTHandle, USART_ERR_NE);
+        }
+
+        if(temp1 & (1 << USART_SR_ORE))
+        {
+            USART_ApplicationEventCallback(pUSARTHandle, USART_ERR_ORE);
+        }
+    }
+}
+
+
+/*
  * Other Peripheral Control APIs
  */
 /*********************************************************************
@@ -433,7 +668,7 @@ void USART_SetBaudRate(USART_RegDef_t *pUSARTx, uint32_t BaudRate)
 		PCLKx = RCC_GetPCLK2Value();
 	}else
 	{
-		PCLKx = RCC_GetPLCK1Value();
+		PCLKx = RCC_GetPCLK1Value();
 	}
 
 	//Check for OVER8 configuration bit
@@ -472,4 +707,117 @@ void USART_SetBaudRate(USART_RegDef_t *pUSARTx, uint32_t BaudRate)
 
 	//copy the value of tempreg in to BRR register
 	pUSARTx->BRR = tempreg;
+}
+
+
+/*
+ * Some helper function implementations
+ */
+/*********************************************************************
+ * @fn                 - RCC_GetPCLK1Value
+ *
+ * @brief              - Calculates and returns the APB1 bus clock frequency (PCLK1).
+ *
+ * @return             - APB1 clock frequency (in Hz)
+ *
+ * @Note               - Used only within this file (static helper).
+ */
+static uint32_t RCC_GetPCLK1Value(void)
+{
+	uint32_t pclk1, SystemClk;
+	uint8_t clksrc, temp, ahbp, apb1p;
+
+	clksrc = ((RCC->CFGR >> 2) & 0x03);
+
+	if(clksrc == 0)
+	{
+		SystemClk = 16000000; // HSI
+	}
+	else if(clksrc == 1)
+	{
+		SystemClk = 8000000;  // HSE (depends on your board crystal)
+	}
+	else if(clksrc == 2)
+	{
+		// If PLL is used, call the PLL calculation function here
+		SystemClk = 16000000;
+	}
+
+	// AHB Prescaler
+	temp = ((RCC->CFGR >> 4) & 0x0F);
+	if(temp < 8)
+	{
+		ahbp = 1;
+	}
+	else
+	{
+		ahbp = AHB_PreScaler[temp - 8];
+	}
+
+	// APB1 Prescaler
+	temp = ((RCC->CFGR >> 10) & 0x07);
+	if(temp < 4)
+	{
+		apb1p = 1;
+	}
+	else
+	{
+		apb1p = APB1_PreScaler[temp - 4];
+	}
+
+	pclk1 = (SystemClk / ahbp) / apb1p;
+
+	return pclk1;
+}
+
+/*********************************************************************
+ * @fn                 - RCC_GetPCLK2Value
+ *
+ * @brief              - Calculates and returns the APB2 bus clock frequency (PCLK2).
+ *
+ * @return             - APB2 clock frequency (in Hz)
+ *
+ * @Note               - Used only within this file (static helper).
+ */
+static uint32_t RCC_GetPCLK2Value(void)
+{
+	uint32_t pclk2, SystemClk = 0;
+	uint8_t clksrc, temp, ahbp, apb2p;
+
+	clksrc = ((RCC->CFGR >> 2) & 0x03);
+
+	if(clksrc == 0)
+	{
+		SystemClk = 16000000; // HSI
+	}
+	else if(clksrc == 1)
+	{
+		SystemClk = 8000000;  // HSE
+	}
+
+	// AHB Prescaler
+	temp = ((RCC->CFGR >> 4) & 0x0F);
+	if(temp < 8)
+	{
+		ahbp = 1;
+	}
+	else
+	{
+		ahbp = AHB_PreScaler[temp - 8];
+	}
+
+	// APB2 Prescaler
+	temp = ((RCC->CFGR >> 13) & 0x07);
+	if(temp < 4)
+	{
+		apb2p = 1;
+	}
+	else
+	{
+		apb2p = APB2_PreScaler[temp - 4];
+	}
+
+	pclk2 = (SystemClk / ahbp) / apb2p;
+
+	return pclk2;
 }
