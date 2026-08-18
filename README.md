@@ -9,8 +9,7 @@
 
 A comprehensive, register-level bare-metal hardware driver library developed from scratch in Embedded C for the STM32F446RE (ARM Cortex-M4) microcontroller.
 
-This project implements complete peripheral driver architectures (MCU Peripheral Layer, Driver Header/Source API Layer, and Application/Test Layer) without using STM32Cube HAL or LL libraries. All implementations strictly follow the official STM32F446xx Reference Manual (RM0390) and ARM Cortex-M4 documentation.
-
+This project implements a register-level hardware abstraction and peripheral driver architecture (MCU Peripheral Layer, Driver Header/Source API Layer, and Application/Test Layer) without using STM32Cube HAL or LL libraries. All implementations strictly follow the official STM32F446xx Reference Manual (RM0390) and ARM Cortex-M4 documentation.
 ---
 
 ## Table of Contents
@@ -29,7 +28,7 @@ This project implements complete peripheral driver architectures (MCU Peripheral
 - **Zero High-Level Abstraction:** Written purely using register-level bit manipulations, bitwise operations, and atomic register access.
 - **Interrupt-Driven Architecture:** Non-blocking asynchronous I/O powered by custom state machines and ARM Cortex-M4 NVIC configuration.
 - **Custom Clock Tree Calculations:** Internal fixed-point arithmetic for system clock prescalers (AHB/APB), I2C timing (CCR/TRISE), and USART fractional baud rates.
-- **Hardware Protocol Coverage:** Fully featured drivers for GPIO, SPI, I2C, and USART/UART.
+- **Hardware Protocol Coverage:** Modular, Core-Feature Peripheral Drivers (Polling & Interrupt Driven) for GPIO, SPI, I2C, and USART/UART.
 - **Validated Applications:** 11+ structured application test cases covering polling, interrupt handlers, master/slave interactions, and edge triggers.
 
 ---
@@ -163,9 +162,7 @@ This project implements complete peripheral driver architectures (MCU Peripheral
 **[🇬🇧 English](#stm32f446xx-bare-metal-peripheral-driver-development) | Türkçe**
 
 STM32F446RE (ARM Cortex-M4) mikrodenetleyicisi için **Embedded C** kullanılarak sıfırdan geliştirilmiş, register seviyesinde çalışan kapsamlı bir bare-metal donanım sürücü kütüphanesi.
-
-Bu projede STM32Cube HAL veya LL kütüphaneleri kullanılmadan; **MCU Peripheral Layer**, **Driver API Layer** ve **Application/Test Layer** mimarileri resmi **STM32F446xx Reference Manual (RM0390)** ve **ARM Cortex-M4** dokümantasyonu esas alınarak geliştirilmiştir.
-
+Bu projede STM32Cube HAL veya LL kütüphaneleri kullanılmadan; register seviyesinde donanım soyutlama ve çevre birimi sürücü mimarileri (MCU Peripheral Layer, Driver API Layer ve Application/Test Layer) resmi STM32F446xx Reference Manual (RM0390) ve ARM Cortex-M4 dokümantasyonu esas alınarak geliştirilmiştir.
 ---
 
 ## İçindekiler
@@ -183,7 +180,7 @@ Bu projede STM32Cube HAL veya LL kütüphaneleri kullanılmadan; **MCU Periphera
 - **HAL veya LL kullanılmadan** tamamen register seviyesinde geliştirilmiştir.
 - **Kesme (Interrupt) Tabanlı Mimari:** Asenkron I/O yönetimi ve ARM Cortex-M4 NVIC yapılandırması.
 - **Dinamik Saat Hesaplamaları:** AHB/APB prescaler, I2C CCR/TRISE ve USART BRR hesaplamaları.
-- **Donanım Protokolleri:** GPIO, SPI, I2C ve USART/UART sürücüleri.
+- **Donanım Protokolleri:** GPIO, SPI, I2C ve USART/UART çevre birimleri için modüler, temel seviye donanım sürücüleri (Polling ve Kesme Tabanlı).
 - **Test Senaryoları:** Polling ve interrupt durumlarını kapsayan 11'den fazla test uygulaması.
 
 ---
