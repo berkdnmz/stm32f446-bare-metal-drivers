@@ -394,6 +394,77 @@ uint8_t USART_ReceiveDataIT(USART_Handle_t *pUSARTHandle, uint8_t *pRxBuffer, ui
  * IRQ Configuration and ISR handling
  */
 /*********************************************************************
+ * @fn      		  - USART_IRQInterruptConfig
+ *
+ * @brief             - Enables or disables the given IRQ number in the ARM Cortex NVIC registers
+ *
+ * @param[in]         - IRQNumber : NVIC IRQ position number
+ * @param[in]         - EnorDi    : ENABLE or DISABLE
+ *
+ * @return            - None
+ *********************************************************************/
+void USART_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi)
+{
+	if(EnorDi == ENABLE)
+	{
+		if(IRQNumber <= 31)
+		{
+			// Program ISER0 register
+			*NVIC_ISER0 |= (1 << IRQNumber);
+		}
+		else if(IRQNumber > 31 && IRQNumber < 64)
+		{
+			// Program ISER1 register
+			*NVIC_ISER1 |= (1 << (IRQNumber % 32));
+		}
+		else if(IRQNumber >= 64 && IRQNumber < 96)
+		{
+			// Program ISER2 register
+			*NVIC_ISER2 |= (1 << (IRQNumber % 64));
+		}
+	}
+	else
+	{
+		if(IRQNumber <= 31)
+		{
+			// Program ICER0 register
+			*NVIC_ICER0 |= (1 << IRQNumber);
+		}
+		else if(IRQNumber > 31 && IRQNumber < 64)
+		{
+			// Program ICER1 register
+			*NVIC_ICER1 |= (1 << (IRQNumber % 32));
+		}
+		else if(IRQNumber >= 64 && IRQNumber < 96)
+		{
+			// Program ICER2 register
+			*NVIC_ICER2 |= (1 << (IRQNumber % 64));
+		}
+	}
+}
+
+/*********************************************************************
+ * @fn      		  - USART_IRQPriorityConfig
+ *
+ * @brief             - Configures the priority of the given IRQ number in NVIC IPR registers
+ *
+ * @param[in]         - IRQNumber   : NVIC IRQ position number
+ * @param[in]         - IRQPriority : Priority value (0 to 15)
+ *
+ * @return            - None
+ *********************************************************************/
+void USART_IRQPriorityConfig(uint8_t IRQNumber, uint32_t IRQPriority)
+{
+	// 1. Find the IPR register
+	uint8_t iprx = IRQNumber / 4;
+	uint8_t iprx_section = IRQNumber % 4;
+
+	uint8_t shift_amount = (8 * iprx_section) + (8 - NO_PR_BITS_IMPLEMENTED);
+
+	*(NVIC_PR_BASE_ADDR + iprx) |= (IRQPriority << shift_amount);
+}
+
+/*********************************************************************
  * @fn                - USART_IRQHandling
  *
  * @brief             - Handles USART interrupts and manages TX/RX state machines
@@ -621,6 +692,28 @@ void USART_IRQHandling(USART_Handle_t *pUSARTHandle)
  * Other Peripheral Control APIs
  */
 /*********************************************************************
+ * @fn      		  - USART_PeripheralControl
+ *
+ * @brief             - Enables or disables the USART peripheral by setting/clearing CR1 UE bit
+ *
+ * @param[in]         - pUSARTx : Base address of the USART peripheral
+ * @param[in]         - EnOrDi  : ENABLE or DISABLE
+ *
+ * @return            - None
+ *********************************************************************/
+void USART_PeripheralControl(USART_RegDef_t *pUSARTx, uint8_t EnOrDi)
+{
+	if(EnOrDi == ENABLE)
+	{
+		pUSARTx->CR1 |= (1 << USART_CR1_UE);
+	}
+	else
+	{
+		pUSARTx->CR1 &= ~(1 << USART_CR1_UE);
+	}
+}
+
+/*********************************************************************
  * @fn      		  - USART_GetFlagStatus
  *
  * @brief             - Returns the status of the specified USART SR flag
@@ -637,6 +730,21 @@ uint8_t USART_GetFlagStatus(USART_RegDef_t *pUSARTx, uint32_t FlagName)
 		return FLAG_SET;
 	}
 	return FLAG_RESET;
+}
+
+/*********************************************************************
+ * @fn      		  - USART_ClearFlag
+ *
+ * @brief             - Clears the specified Status Register flag
+ *
+ * @param[in]         - pUSARTx        : Base address of the USART peripheral
+ * @param[in]         - StatusFlagName : Flag to clear (e.g. USART_FLAG_CTS)
+ *
+ * @return            - None
+ *********************************************************************/
+void USART_ClearFlag(USART_RegDef_t *pUSARTx, uint16_t StatusFlagName)
+{
+	pUSARTx->SR &= ~(StatusFlagName);
 }
 
 /*********************************************************************
@@ -709,6 +817,24 @@ void USART_SetBaudRate(USART_RegDef_t *pUSARTx, uint32_t BaudRate)
 	pUSARTx->BRR = tempreg;
 }
 
+/*
+ * Application callback
+ */
+/*********************************************************************
+ * @fn      		  - USART_ApplicationEventCallback
+ *
+ * @brief             - Weak implementation of the user application event callback
+ *
+ * @param[in]         - pUSARTHandle : Handle pointer
+ * @param[in]         - AppEv        : Event code
+ *
+ * @return            - None
+ * @Note              - Marked as weak so user can override it in main.c
+ *********************************************************************/
+__attribute__((weak)) void USART_ApplicationEventCallback(USART_Handle_t *pUSARTHandle, uint8_t AppEv)
+{
+	// This is a weak implementation. The user application may override this function.
+}
 
 /*
  * Some helper function implementations
